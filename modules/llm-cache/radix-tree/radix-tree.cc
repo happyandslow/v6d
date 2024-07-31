@@ -178,6 +178,16 @@ std::ostream& operator<<(std::ostream& os, const std::vector<int>& token_list) {
 }
 
 
+std::string dataWrapperToString(DataWrapper* dw) {
+    if (!dw || !dw->data) {
+        return "Invalid DataWrapper or data is null.";
+    }
+
+    // Convert the void* data to char* and create a string
+    char* charData = reinterpret_cast<char*>(dw->data);
+    return std::string(charData, dw->dataLength);
+}
+
 std::shared_ptr<NodeData> RadixTree::QueryInternal(
     const std::vector<int>& tokens) {
   VLOG(100) << "Query";
@@ -193,7 +203,12 @@ std::shared_ptr<NodeData> RadixTree::QueryInternal(
     return NULL;
   }
 
-  LOG(INFO) << "QueryInternal data node " << dataNode << " rax " << this->tree << " token list " << tokens;
+  LOG(INFO) 
+    << "QueryInternal data node " << dataNode 
+    << " rax " << this->tree
+    << " token list " << tokens 
+    << " get data " << dataWrapperToString(reinterpret_cast<DataWrapper*>(raxGetData(dataNode)))
+    << " custom data " << dataWrapperToString(reinterpret_cast<DataWrapper*>(subTreeNode->custom_data));
   return std::make_shared<NodeData>(
       reinterpret_cast<DataWrapper*>(raxGetData(dataNode)),
       reinterpret_cast<DataWrapper*>(subTreeNode->custom_data));

@@ -100,12 +100,23 @@ Status KVCacheBuilder::Make(Client& client,
 
   kvCacheBuilder = std::shared_ptr<KVCacheBuilder>(
       new KVCacheBuilder(client, tensorNBytes, layer, rootTree));
+  LOG(INFO) 
+      << " Make: "
+      << " KVCacheBlockBuilder " << builder
+      << " KVCacheBuilder " << kvCacheBuilder.get()
+      << " block size:" << blockSize
+      << " tensorNBytes " << tensorNBytes;
   return Status::OK();
 }
 
 Status KVCacheBuilder::Make(Client& client,
                             std::shared_ptr<KVCacheBuilder>& kvCacheBuilder,
                             std::shared_ptr<KVCache>& cache) {
+  LOG(INFO) 
+      << " Make from builder: "
+      << " KVCacheBlockBuilder " << kvCacheBuilder.get()
+  
+      << " cache tree " << cache->rootTree.get();
   kvCacheBuilder = std::make_shared<KVCacheBuilder>(
       client, cache->GetTensorNBytes(), cache->GetLayer(), cache->rootTree);
   return Status::OK();
@@ -136,6 +147,8 @@ Status KVCacheBuilder::Split(
             << " bitmap:" << kvCacheBlockBuilder->GetBitmapStr();
   VLOG(100) << "child_builder:" << childKVCacheBlockBuilder
             << " bitmap:" << childKVCacheBlockBuilder->GetBitmapStr();
+  LOG(INFO) << "builder:" << kvCacheBlockBuilder
+            << " bitmap:" << kvCacheBlockBuilder->GetBitmapStr();
   return Status::OK();
 }
 
@@ -176,6 +189,7 @@ Status KVCacheBuilder::Update(
      * split according to the new tree.
      */
     VLOG(100) << "trigger splits";
+    LOG(INFO) << "trigger splits";
     std::shared_ptr<NodeData> evictedNodeData = nullptr;
     this->rootTree->Delete(tokenListCopy, evictedNodeData);
 
@@ -216,6 +230,21 @@ Status KVCacheBuilder::Update(
   return Status::OK();
 }
 
+
+// Overload the << operator for std::vector<int>
+// std::ostream& operator<<(std::ostream& os, const std::vector<int>& token_list) {
+//     os << "[";
+//     for (size_t i = 0; i < token_list.size(); ++i) {
+//         if (i != 0) {
+//             os << ", ";
+//         }
+//         os << token_list[i];
+//     }
+//     os << "]";
+//     return os;
+// } 
+
+
 Status KVCacheBuilder::Query(const std::vector<int>& tokenList, int token,
                              std::vector<std::pair<LLMKV, LLMKV>>& kvState) {
   std::vector<int> tokenListCopy = tokenList;
@@ -241,7 +270,14 @@ Status KVCacheBuilder::Query(const std::vector<int>& tokenList, int token,
     treeData->isPtr = true;
     blockIDSetToDelete.insert(blockObjectID);
   }
-
+  LOG(INFO) << "Query:"
+            << " this->rootTree " << this->rootTree.get()
+            << " nodeData " << nodeData.get()
+            << " treeData id "<< treeData->builderObjectID
+            << " treeData->builderObjectID " << treeData->builderObjectID
+            << " treeData->isPtr " << treeData->isPtr
+            << " offset " << offset
+            << " kvState " << &kvState;
   return kvCacheBlockBuilder->Query(offset, kvState);
 }
 
@@ -271,6 +307,11 @@ void KVCacheBuilder::Delete(std::shared_ptr<NodeData> evictedNodeData) {
   OffsetData* data =
       reinterpret_cast<OffsetData*>(evictedNodeData->nodeData->data);
   kvCacheBlockBuilder->DeleteKVCache(data->offset);
+  LOG(INFO) << "Delete:"
+            << " evictedNodeData " << evictedNodeData.get()
+            << " treeData " << treeData
+            << " treeData id "<< treeData->builderObjectID
+            << " treeData->builderObjectID " << treeData->builderObjectID;
   delete data;
   // TBD
   // Refactor this code. The data should be deleted by the RadixTree
@@ -283,6 +324,7 @@ void KVCacheBuilder::Delete(std::shared_ptr<NodeData> evictedNodeData) {
       LOG(ERROR) << "Delete object failed: " << status.ToString()
                  << " It may cause memory leak.";
     }
+    LOG(INFO) << "Delete kvCacheBlockBuilder: " << kvCacheBlockBuilder;
     delete kvCacheBlockBuilder;
   }
   evictedNodeData->RecycleSource();
@@ -305,6 +347,8 @@ Status KVCacheBuilder::Merge(std::shared_ptr<KVCache> kvCache) {
                        insertTokenList);
 
   VLOG(100) << "insert token list size:" << insertTokenList.size()
+            << " evicted token list size:" << evicted_token_list.size();
+  LOG(INFO) << "insert token list size:" << insertTokenList.size()
             << " evicted token list size:" << evicted_token_list.size();
   for (size_t i = 0; i < evicted_token_list.size(); i++) {
     std::vector<int> tokenList =
@@ -359,6 +403,7 @@ void KVCacheBuilder::GetCurrentBlockIDSet(std::set<ObjectID>& objectIDSet) {
 Status KVCacheBuilder::Build(Client& client) { return Status::OK(); }
 
 std::shared_ptr<Object> KVCacheBuilder::_Seal(Client& client) {
+  LOG(INFO) << "Seal:" << &client;
   VINEYARD_CHECK_OK(this->Build(client));
 
   std::shared_ptr<KVCache> kvCache = std::make_shared<KVCache>();

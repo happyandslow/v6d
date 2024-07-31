@@ -97,6 +97,9 @@ KVCacheBlockBuilder::KVCacheBlockBuilder(Client& client, int tensorNBytes,
   }
   this->tensorNBytes = tensorNBytes;
   this->layer = layer;
+   LOG(INFO) << "create builder from block object, bitmap size:"
+            << this->bitmapSize << " block size:" << blockSize
+            << " tensorNBytes " << tensorNBytes;
 }
 
 KVCacheBlockBuilder::KVCacheBlockBuilder(
@@ -146,6 +149,13 @@ Status KVCacheBlockBuilder::Make(Client& client, TreeData* treeData,
   std::shared_ptr<KVCacheBlock> blockObject;
   RETURN_ON_ERROR(client.FetchAndGetObject(blockObjectID, blockObject));
   kvCacheBlockBuilder = new KVCacheBlockBuilder(client, blockObject);
+  LOG(INFO) << "Make:"
+            << " treeData->builderObjectID " << treeData->builderObjectID
+            << " blockObjectID " << blockObjectID
+            << " kvCacheBlock " << blockObject.get()
+            << " tensors " << blockObject->GetKeyTensor(0).get() 
+            << " id " << blockObject->GetKeyTensor(0)->id()
+            << " meta " << blockObject->GetKeyTensor(0)->meta().ToString();
   if (blockObjectID != blockObject->id()) {
     // If the object is migrated, we should delete the copied object.
     Status status = client.DelData(blockObject->id());
@@ -171,6 +181,7 @@ Status KVCacheBlockBuilder::Query(
       << (keyState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(keyState.data))) 
       << " value state "
       << (valueState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(valueState.data)));
+
     // VINEYARD_ASSERT(keyState.data == nullptr && valueState.data == nullptr);
     keyState.data =
         keyStateTensorBuilderList[currentLayer]->data() + index * tensorNBytes;
