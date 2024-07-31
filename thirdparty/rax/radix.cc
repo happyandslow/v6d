@@ -1090,6 +1090,19 @@ raxStack raxFindWithStack(rax *rax, const std::vector<int>& token_list) {
     return ts;
 }
 
+// Overload the << operator for std::vector<int>
+std::ostream& operator<<(std::ostream& os, const std::vector<int>& token_list) {
+    os << "[";
+    for (size_t i = 0; i < token_list.size(); ++i) {
+        if (i != 0) {
+            os << ", ";
+        }
+        os << token_list[i];
+    }
+    os << "]";
+    return os;
+} 
+
 /*
 ** Find a key in the rax, returns the raxNode that contains the key.
 */
@@ -1106,11 +1119,11 @@ raxNode *raxFindAndReturnDataNode(rax *rax, const std::vector<int>& token_list, 
     raxNode *tmp = h;
     while(tmp != nullptr && tmp->issubtree == false) {
         tmp = (raxNode *)raxStackPop(&ts);
-    }
+    } 
     if (tmp != nullptr && sub_tree_node != nullptr) {
         *sub_tree_node = tmp;
     }
-
+    LOG(INFO) << "raxFindAndReturnDataNode data node " << h << " rax " << rax << " token list " << token_list;
     return h;
 }
 

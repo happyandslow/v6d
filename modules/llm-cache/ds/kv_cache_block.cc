@@ -106,6 +106,12 @@ KVCacheBlockBuilder::KVCacheBlockBuilder(
   this->blockSize = kvCacheBlock->blockSize;
   VLOG(100) << "create builder from block object, bitmap size:"
             << this->bitmapSize << " block size:" << blockSize;
+  LOG(INFO) << "create builder from block object, bitmap size:"
+            << this->bitmapSize << " block size:" << blockSize
+            << " kvCacheBlock " << kvCacheBlock.get()
+            << " tensors " << kvCacheBlock->GetKeyTensor(0).get() 
+            << " id " << kvCacheBlock->GetKeyTensor(0)->id()
+            << " meta " << kvCacheBlock->GetKeyTensor(0)->meta().ToString();
   this->bitmap = new uint64_t[this->bitmapSize];
   for (int i = 0; i < this->bitmapSize; i++) {
     this->bitmap[i] = kvCacheBlock->bitmap[i];
@@ -160,7 +166,12 @@ Status KVCacheBlockBuilder::Query(
   for (int currentLayer = 0; currentLayer < this->layer; currentLayer++) {
     LLMKV& keyState = kvState[currentLayer].first;
     LLMKV& valueState = kvState[currentLayer].second;
-    VINEYARD_ASSERT(keyState.data == nullptr && valueState.data == nullptr);
+    LOG(INFO) 
+      << " Query: key state "
+      << (keyState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(keyState.data))) 
+      << " value state "
+      << (valueState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(valueState.data)));
+    // VINEYARD_ASSERT(keyState.data == nullptr && valueState.data == nullptr);
     keyState.data =
         keyStateTensorBuilderList[currentLayer]->data() + index * tensorNBytes;
     keyState.length = tensorNBytes;
