@@ -367,8 +367,10 @@ class KVCache:  # pylint: disable=too-many-instance-attributes
             int: The number of matched tokens.
         """
         if prefix:
+            logger.info(f"cache query {prefix} {tokens} {kv_cache_list}")
             return self.kv_cache_manager.query(prefix, tokens, kv_cache_list)
         else:
+            logger.info(f"cache query {tokens} {kv_cache_list}")
             return self.kv_cache_manager.query(tokens, kv_cache_list)
 
     def __del__(self):

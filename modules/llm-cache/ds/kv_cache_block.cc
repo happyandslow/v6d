@@ -174,10 +174,15 @@ Status KVCacheBlockBuilder::Query(
   RETURN_ON_ASSERT(static_cast<int>(kvState.size()) == this->layer,
                    "The size of kvState is not equal to layer");
   for (int currentLayer = 0; currentLayer < this->layer; currentLayer++) {
+    LOG(INFO) 
+      << " Query pre: key state "
+      << (kvState[currentLayer].first.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(kvState[currentLayer].first.data))) 
+      << " value state "
+      << (kvState[currentLayer].second.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(kvState[currentLayer].second.data)));
     LLMKV& keyState = kvState[currentLayer].first;
     LLMKV& valueState = kvState[currentLayer].second;
     LOG(INFO) 
-      << " Query: key state "
+      << " Query post: key state "
       << (keyState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(keyState.data))) 
       << " value state "
       << (valueState.data == nullptr? "null" : std::to_string(reinterpret_cast<uintptr_t>(valueState.data)));
